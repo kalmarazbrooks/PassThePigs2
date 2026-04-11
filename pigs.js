@@ -3,8 +3,15 @@
 // ----------------
 
 const debugMode = true
-
 const players = 3 // 0, 1, 2, 3
+const goal = 20
+
+// ----------------
+//     Frontend
+// ----------------
+
+// Variables //
+
 const buttons = [['player0RollButton', 'player0PassButton'],
                 ['player1RollButton', 'player1PassButton'],
                 ['player2RollButton', 'player2PassButton'],
@@ -13,18 +20,11 @@ const texts = [['player0HandScore', 'player0TotalScore'],
                 ['player1HandScore', 'player1TotalScore'],
                 ['player2HandScore', 'player2TotalScore'],
                 ['player3HandScore', 'player3TotalScore']]
-
-const states = [['Dot', 34.90, 0], ['No Dot', 65.1, 0], ['Razorback', 87.5, 5],
-                ['Trotter', 96.3, 5], ['Snouter', 99.3, 10], 
-                ['Leaning Jowler', 100, 15]] // name, probability (sum of previous terms), points (greater than 1)
-
-const goal = 20
-
-// ----------------
-//     Frontend
-// ----------------
-
-// Variables //
+const pigTexts = [['player0Pig1', 'player0Pig2'],
+                ['player1Pig1', 'player1Pig2'],
+                ['player2Pig1', 'player2Pig2'],
+                ['player3Pig1', 'player3Pig2']]
+const cards = ['player0', 'player1', 'player2', 'player3']
 
 // Functions //
 
@@ -38,9 +38,11 @@ function handleClick(element) {
     }
 }
 
-function handleWin() {
+function handleWin(player) {
     print('win!')
 
+    disableAllButtons()
+    changeCardColor(cards[player], 'w3-yellow')
     // implement win
 
     element('replay').classList.remove('w3-hide')
@@ -61,12 +63,22 @@ function updateTemp(out, reset, textID) {
         element(textID).innerHTML = 'Score: ' + tempScore
     }
 }
-
 function updateTotal(reset, totalID) {
     if (reset) {
-        element(totalID).innerHTML = 'Total score: '
+        element(totalID).innerHTML = 'Total score: 0'
     } else {
         element(totalID).innerHTML = 'Total score: ' + scores[player]
+    }
+}
+
+function displayPigs(textIDs, pig1, pig2) {
+    element(textIDs[0]).innerHTML = pig1[0] 
+    element(textIDs[1]).innerHTML = pig2[0]
+}
+function resetPigs() {
+    for (let pig of pigTexts) {
+        element(pig[0]).innerHTML = '/'
+        element(pig[1]).innerHTML = '/'
     }
 }
 
@@ -75,6 +87,17 @@ function enableButton(buttonID) {
 }
 function disableButton(buttonID) {
     element(buttonID).disabled = true
+}
+
+function disableAllButtons() {
+    for (const button of buttons) {
+        disableButton(button[0])
+        disableButton(button[1])
+    }
+}
+
+function changeCardColor(card, color) {
+    element(card).classList.add(color)
 }
 
 // ----------------
@@ -89,20 +112,22 @@ let tempScore = 0
 let rolls = null
 let scores = [0, 0, 0, 0]
 
+const states = [['Dot', 34.90, 0], ['No Dot', 65.1, 0], ['Razorback', 87.5, 5],
+                ['Trotter', 96.3, 5], ['Snouter', 99.3, 10], 
+                ['Leaning Jowler', 100, 15]] // name, probability (sum of previous terms), points (greater than 1)
+
 // Functions //
 
 function init() {
     resetScores()
+    resetPigs()
 
     player = -1
     rolls = null
 
-    for (const button of buttons) {
-        disableButton(button[0])
-        disableButton(button[1])
-    }
+    disableAllButtons()
     for (const text of texts) {
-        updateTemp(true, false, text[0])
+        updateTemp(false, true, text[0])
         updateTotal(true, text[1])
     }
 
@@ -117,6 +142,8 @@ function actionLoop() {
 function inputRoll() {
     let pig1 = roll()
     let pig2 = roll()
+
+    displayPigs(pigTexts[player], states[pig1], states[pig2])
 
     return [pig1, pig2]
 }
