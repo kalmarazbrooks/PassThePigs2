@@ -4,7 +4,7 @@
 
 const debugMode = true
 const players = 3 // 0, 1, 2, 3
-const goal = 20
+const goal = 1
 
 // ----------------
 //     Frontend
@@ -25,6 +25,7 @@ const pigTexts = [['player0Pig1', 'player0Pig2'],
                 ['player2Pig1', 'player2Pig2'],
                 ['player3Pig1', 'player3Pig2']]
 const cards = ['player0', 'player1', 'player2', 'player3']
+const colorPalette = ['w3-light-gray', 'w3-dark-gray', 'w3-yellow']
 
 // Functions //
 
@@ -42,7 +43,7 @@ function handleWin(player) {
     print('win!')
 
     disableAllButtons()
-    changeCardColor(cards[player], 'w3-yellow')
+    changeCardColor(cards[player], colorPalette[2])
     // implement win
 
     element('replay').classList.remove('w3-hide')
@@ -95,9 +96,29 @@ function disableAllButtons() {
         disableButton(button[1])
     }
 }
+function resetTexts() {
+    for (const text of texts) {
+        updateTemp(false, true, text[0])
+        updateTotal(true, text[1])
+    }
+}
 
 function changeCardColor(card, color) {
+    print(color)
+
+    removeColor(card)
     element(card).classList.add(color)
+}
+function removeColor(card) {
+    print('removing color from ' + card)
+    for (const color of colorPalette) {
+        element(card).classList.remove(color)
+    }
+}
+function resetAllColors() {
+    for (let card of cards) {
+        changeCardColor(card, colorPalette[0])
+    }
 }
 
 // ----------------
@@ -119,17 +140,14 @@ const states = [['Dot', 34.90, 0], ['No Dot', 65.1, 0], ['Razorback', 87.5, 5],
 // Functions //
 
 function init() {
-    resetScores()
-    resetPigs()
-
     player = -1
     rolls = null
 
     disableAllButtons()
-    for (const text of texts) {
-        updateTemp(false, true, text[0])
-        updateTotal(true, text[1])
-    }
+    resetScores()
+    resetPigs()
+    resetTexts()
+    resetAllColors()
 
     incrementPlayer()
 }
@@ -199,7 +217,7 @@ function handlePlayerScore(score) {
     updateTemp(false, false, texts[player][0])
 
     if (scores[player] + tempScore >= goal) {
-        handleWin()
+        handleWin(player)
         return scores[player] + tempScore
     }
 
@@ -209,12 +227,15 @@ function handlePlayerScore(score) {
 function incrementPlayer() {
     tempScore = 0
 
+    changeCardColor(player, colorPalette[0])
+
     if (player == players) {
         player = 0
     } else {
         player++
     }
 
+    changeCardColor(player, colorPalette[1])
     enableButton(buttons[player][0])
 }
 
