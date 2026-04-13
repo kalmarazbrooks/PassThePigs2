@@ -2,9 +2,18 @@
 //    Constants
 // ----------------
 
-const debugMode = true
+const debugMode = true // check console for print statements
 const players = 3 // 0, 1, 2, 3
-const goal = 1
+const goal = 20
+
+// Audios from Pixabay, https://stackoverflow.com/questions/9419263/how-to-play-audio
+const click = new Audio('audio/click.mp3');
+const chaching = new Audio('audio/chaching.mp3')
+const pigout = new Audio('audio/pigout.mp3')
+const jackpot = new Audio('audio/jackpot.mp3')
+const win = new Audio('audio/win.mp3')
+
+pigout.volume = 0.5
 
 // ----------------
 //     Frontend
@@ -30,12 +39,14 @@ const colorPalette = ['w3-light-gray', 'w3-dark-gray', 'w3-yellow']
 // Functions //
 
 function handleClick(element) {
+    playSound(click)
+
     if (element == 'replayButton') {
         handleReplay()
     } else if (element.slice(7) == 'RollButton') {
-        actionLoop()
+        rollAction()
     } else {
-        pass(false)
+        passAction(false)
     }
 }
 
@@ -44,7 +55,6 @@ function handleWin(player) {
 
     disableAllButtons()
     changeCardColor(cards[player], colorPalette[2])
-    // implement win
 
     element('replay').classList.remove('w3-hide')
 }
@@ -59,7 +69,7 @@ function updateTemp(out, reset, textID) {
     if (out) {
         element(textID).innerHTML = 'PIG OUT!'
     } else if (reset) {
-        element(textID).innerHTML = 'Score: '
+        element(textID).innerHTML = 'Score: 0'
     } else {
         element(textID).innerHTML = 'Score: ' + tempScore
     }
@@ -103,21 +113,22 @@ function resetTexts() {
     }
 }
 
-function changeCardColor(card, color) {
+function changeCardColor(cardID, color) {
     print(color)
 
-    removeColor(card)
-    element(card).classList.add(color)
+    removeColor(cardID)
+    element(cardID).classList.add(color)
 }
-function removeColor(card) {
-    print('removing color from ' + card)
+function removeColor(cardID) {
+    print('removing color from ' + cardID)
     for (const color of colorPalette) {
-        element(card).classList.remove(color)
+        element(cardID).classList.remove(color)
     }
 }
 function resetAllColors() {
-    for (let card of cards) {
-        changeCardColor(card, colorPalette[0])
+    for (let cardID of cards) {
+        print(cardID)
+        changeCardColor(cardID, colorPalette[0])
     }
 }
 
@@ -127,7 +138,7 @@ function resetAllColors() {
 
 // Variables //
 
-let player = 0 // start at player 0
+let player = 0
 let tempScore = 0
 
 let rolls = null
@@ -140,30 +151,23 @@ const states = [['Dot', 34.90, 0], ['No Dot', 65.1, 0], ['Razorback', 87.5, 5],
 // Functions //
 
 function init() {
-    player = -1
+    player = -1 // incrementPlayer will set this to 0 after initialization
     rolls = null
 
     disableAllButtons()
     resetScores()
     resetPigs()
     resetTexts()
-    resetAllColors()
 
     incrementPlayer()
 }
 
-function actionLoop() {
-    rolls = inputRoll()
-    handlePlayerScore(score(rolls[0], rolls[1]))
-}
-
-function inputRoll() {
+function rollAction() {
     let pig1 = roll()
     let pig2 = roll()
 
     displayPigs(pigTexts[player], states[pig1], states[pig2])
-
-    return [pig1, pig2]
+    handlePlayerScore(score(pig1, pig2))
 }
 
 function score(pig1, pig2) {
@@ -192,13 +196,15 @@ function roll() {
     }
 }
 
-function pass(out) {
+function passAction(out) {
     print('pass!')
 
     if (!out) {
         scores[player] += tempScore
         updateTotal(false, texts[player][1])
-    } 
+
+        playSound(chaching)
+    } else playSound(pigout)
 
     updateTemp(out, true, texts[player][0])
     disableButton(buttons[player][0])
@@ -218,6 +224,9 @@ function handlePlayerScore(score) {
 
     if (scores[player] + tempScore >= goal) {
         handleWin(player)
+        playSound(jackpot)
+        playSound(win)
+
         return scores[player] + tempScore
     }
 
@@ -227,7 +236,7 @@ function handlePlayerScore(score) {
 function incrementPlayer() {
     tempScore = 0
 
-    changeCardColor(player, colorPalette[0])
+    resetAllColors()
 
     if (player == players) {
         player = 0
@@ -235,7 +244,7 @@ function incrementPlayer() {
         player++
     }
 
-    changeCardColor(player, colorPalette[1])
+    changeCardColor(cards[player], colorPalette[1])
     enableButton(buttons[player][0])
 }
 
@@ -256,6 +265,11 @@ function print(thing) {
 
 function element(id) {
     return document.getElementById(id)
+}
+
+function playSound(audio) {
+    audio.currentTime = 0
+    audio.play()
 }
 
 init()
