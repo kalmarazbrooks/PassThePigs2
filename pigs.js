@@ -4,7 +4,7 @@
 
 const debugMode = true // check console for print statements
 const players = 3 // 0, 1, 2, 3
-const goal = 20
+const goal = 5
 
 // Audios from Pixabay, https://stackoverflow.com/questions/9419263/how-to-play-audio
 const click = new Audio('audio/click.mp3');
@@ -25,10 +25,10 @@ const buttons = [['player0RollButton', 'player0PassButton'],
                 ['player1RollButton', 'player1PassButton'],
                 ['player2RollButton', 'player2PassButton'],
                 ['player3RollButton', 'player3PassButton']]
-const texts = [['player0HandScore', 'player0TotalScore'],
-                ['player1HandScore', 'player1TotalScore'],
-                ['player2HandScore', 'player2TotalScore'],
-                ['player3HandScore', 'player3TotalScore']]
+const texts = [['player0HandScore', 'player0TotalScore', 'player0Heading'],
+                ['player1HandScore', 'player1TotalScore', 'player1Heading'],
+                ['player2HandScore', 'player2TotalScore', 'player2Heading'],
+                ['player3HandScore', 'player3TotalScore', 'player3Heading']]
 const pigTexts = [['player0Pig1', 'player0Pig2'],
                 ['player1Pig1', 'player1Pig2'],
                 ['player2Pig1', 'player2Pig2'],
@@ -56,6 +56,9 @@ function handleWin(player) {
     disableAllButtons()
     changeCardColor(cards[player], colorPalette[2])
 
+    if (prevPlayer != null) updateHeading(texts[prevPlayer][2], prevPlayer) // safety check
+    updateHeading(texts[player][2], player, `Player ${player} 👑`)
+
     element('replay').classList.remove('w3-hide')
 }
 
@@ -74,12 +77,22 @@ function updateTemp(out, reset, textID) {
         element(textID).innerHTML = 'Score: ' + tempScore
     }
 }
-function updateTotal(reset, totalID) {
+function updateTotal(reset, textID, player) {
     if (reset) {
-        element(totalID).innerHTML = 'Total score: 0'
+        element(textID).innerHTML = 'Total score: 0'
     } else {
-        element(totalID).innerHTML = 'Total score: ' + scores[player]
+        element(textID).innerHTML = 'Total score: ' + scores[player]
     }
+}
+function updateHeading(textID, player, text) {
+    if (text) {
+        element(textID).innerHTML = text
+        print(`updating player ${0} header to ${text}`)
+    } else {
+        element(textID).innerHTML = 'Player ' + player
+        print(`resetting player ${0} header`)
+    }
+
 }
 
 function displayPigs(textIDs, pig1, pig2) {
@@ -109,7 +122,7 @@ function disableAllButtons() {
 function resetTexts() {
     for (const text of texts) {
         updateTemp(false, true, text[0])
-        updateTotal(true, text[1])
+        updateTotal(true, text[1], player)
     }
 }
 
@@ -139,6 +152,8 @@ function resetAllColors() {
 // Variables //
 
 let player = 0
+let prevPlayer = null
+
 let tempScore = 0
 
 let rolls = null
@@ -163,14 +178,36 @@ function init() {
 }
 
 function rollAction() {
+    print('roll!')
+
     let pig1 = roll()
     let pig2 = roll()
-
     displayPigs(pigTexts[player], states[pig1], states[pig2])
-    handlePlayerScore(score(pig1, pig2))
+
+    let score = scorePigs(pig1, pig2)
+    updatePlayerScore(score)
 }
 
-function score(pig1, pig2) {
+function passAction(out) {
+    print('pass!')
+
+    if (!out) {
+        scores[player] += tempScore
+        updateTotal(false, texts[player][1], player)
+
+        playSound(chaching)
+    } else playSound(pigout)
+
+    updateTemp(out, true, texts[player][0])
+    disableButton(buttons[player][0])
+    disableButton(buttons[player][1])
+
+    incrementPlayer()
+
+    print(player)
+}
+
+function scorePigs(pig1, pig2) {
     print(states[pig1])
     print(states[pig2])
 
@@ -186,37 +223,8 @@ function score(pig1, pig2) {
     }
 }
 
-function roll() {
-    let roll = Math.random() * 100
-
-    for (const state of states) {
-        if (roll < state[1]) {
-            return states.indexOf(state)
-        }
-    }
-}
-
-function passAction(out) {
-    print('pass!')
-
-    if (!out) {
-        scores[player] += tempScore
-        updateTotal(false, texts[player][1])
-
-        playSound(chaching)
-    } else playSound(pigout)
-
-    updateTemp(out, true, texts[player][0])
-    disableButton(buttons[player][0])
-    disableButton(buttons[player][1])
-
-    incrementPlayer()
-
-    print(player)
-}
-
-function handlePlayerScore(score) {
-    if (score == 0) return pass(true) // pig out short circuit
+function updatePlayerScore(score) {
+    if (score == 0) return passAction(true) // pig out short circuit
     
     tempScore += score
 
@@ -224,6 +232,8 @@ function handlePlayerScore(score) {
 
     if (scores[player] + tempScore >= goal) {
         handleWin(player)
+        prevPlayer = player
+
         playSound(jackpot)
         playSound(win)
 
@@ -246,6 +256,16 @@ function incrementPlayer() {
 
     changeCardColor(cards[player], colorPalette[1])
     enableButton(buttons[player][0])
+}
+
+function roll() {
+    let roll = Math.random() * 100
+
+    for (const state of states) {
+        if (roll < state[1]) {
+            return states.indexOf(state)
+        }
+    }
 }
 
 function resetScores() {
