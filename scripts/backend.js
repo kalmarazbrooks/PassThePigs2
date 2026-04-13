@@ -13,8 +13,8 @@ let rolls = null
 let scores = [0, 0, 0, 0]
 
 const states = [['Dot', 34.90, 0], ['No Dot', 65.1, 0], ['Razorback', 87.5, 5],
-                ['Trotter', 96.3, 5], ['Snouter', 99.3, 10], 
-                ['Leaning Jowler', 100, 15]] // name, probability (sum of previous terms), points (greater than 1)
+['Trotter', 96.3, 5], ['Snouter', 99.3, 10],
+['Leaning Jowler', 100, 15]] // name, probability (sum of previous terms), points (greater than 1)
 
 // Functions //
 
@@ -38,7 +38,7 @@ function rollAction() {
     displayPigs(pigTexts[player], states[pig1], states[pig2])
 
     let score = scorePigs(pig1, pig2)
-    updatePlayerScore(score)
+    return updatePlayerScore(score)
 }
 
 function passAction(out) {
@@ -49,7 +49,10 @@ function passAction(out) {
         updateTotal(false, texts[player][1], player)
 
         playSound(chaching)
-    } else playSound(pigout)
+    } else {
+        playSound(pigout)
+        print('pig out!')
+    }
 
     updateTemp(out, true, texts[player][0])
     disableButton(buttons[player][0])
@@ -58,6 +61,8 @@ function passAction(out) {
     incrementPlayer()
 
     print(player)
+
+    return out
 }
 
 function scorePigs(pig1, pig2) {
@@ -78,7 +83,7 @@ function scorePigs(pig1, pig2) {
 
 function updatePlayerScore(score) {
     if (score == 0) return passAction(true) // pig out short circuit
-    
+
     tempScore += score
 
     updateTemp(false, false, texts[player][0])
@@ -109,6 +114,8 @@ function incrementPlayer() {
 
     changeCardColor(cards[player], colorPalette[1])
     enableButton(buttons[player][0])
+
+    if (player == 3 & aiLevel > 0) aiLoop()
 }
 
 function roll() {
@@ -123,6 +130,19 @@ function roll() {
 
 function resetScores() {
     scores = [0, 0, 0, 0]
+}
+
+function aiLoop() {
+    print('AI play')
+    let decision = aiInstance.makeDecision(aiLevel, tempScore, scores[3], scores.slice(0, 3), goal)
+
+    print(decision)
+
+    if (decision) {
+        if (rollAction()) return // true if out, false if not out
+        aiLoop()
+    }
+    else passAction()
 }
 
 init()
