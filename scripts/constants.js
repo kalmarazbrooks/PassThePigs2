@@ -4,7 +4,7 @@
 
 const debugMode = false // check console for print statements
 const players = 3 // 0, 1, 2, 3
-const goal = 50
+const goal = 100
 
 // Audios from Pixabay, https://stackoverflow.com/questions/9419263/how-to-play-audio
 const click = new Audio('audio/click.mp3');
